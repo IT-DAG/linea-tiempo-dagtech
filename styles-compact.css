@@ -356,8 +356,8 @@ body {
 
 .timeline-wrapper {
     position: relative;
-    width: 8000px;
-    /* Increased width for better spacing */
+    width: 3000px;
+    /* Compact width to fit more in viewport */
     height: 100%;
     /* Full viewport height */
     padding: 0;
@@ -410,12 +410,13 @@ body {
 }
 
 .year-label {
-    font-size: 0.9rem;
+    font-size: 0.75rem;
+    /* Smaller for compact */
     font-weight: 600;
     color: var(--text-muted);
     letter-spacing: 0.05em;
-    padding: 0.25rem 0.5rem;
-    min-width: 40px;
+    padding: 0.2rem 0.4rem;
+    min-width: 35px;
     text-align: center;
     background: transparent;
     border: none;
@@ -456,54 +457,102 @@ body {
     pointer-events: none;
 }
 
+/* Milestone Connector */
 .milestone-connector {
     width: 2px;
-    background: currentColor;
-    opacity: 0.6;
-    flex-shrink: 0;
-    margin-bottom: 2px;
-    /* Small gap from timeline line */
+    background: linear-gradient(to top,
+            var(--border-color),
+            rgba(156, 163, 175, 0.5));
+    margin: 0 auto;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
+/* Star at the T junction - positioned on the card */
 .milestone-card {
+    position: relative;
+    /* For star positioning */
     background: var(--bg-glass);
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
     border: 1px solid var(--border-color);
-    border-radius: 12px;
-    padding: 0.75rem 1rem;
-    width: 100%;
-    /* Take full width of container defined in JS */
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+    border-radius: 8px;
+    padding: 0.5rem 0.6rem;
+    /* Compact padding */
+    min-width: 100px;
+    /* Smaller minimum */
+    max-width: 140px;
+    /* Narrower cards for multi-line text */
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.2);
     transition: all var(--transition-normal);
+}
+
+.milestone-card .milestone-star {
+    position: absolute;
+    top: -8px;
+    /* At the top edge of the card, overlapping with connector */
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 0.65rem;
+    cursor: pointer;
+    opacity: 0.3;
+    transition: all var(--transition-normal);
+    filter: grayscale(100%);
+    background: var(--bg-primary);
+    border-radius: 50%;
+    padding: 2px;
+    border: 1px solid var(--border-color);
+    z-index: 10;
+}
+
+.milestone-card .milestone-star.active {
+    opacity: 1;
+    filter: none;
+    text-shadow: 0 0 6px rgba(255, 215, 0, 0.5);
+    background: rgba(255, 215, 0, 0.1);
+    border-color: rgba(255, 215, 0, 0.3);
+}
+
+.milestone-card .milestone-star:hover {
+    opacity: 0.9;
+    transform: translateX(-50%) scale(1.2);
 }
 
 .milestone-row {
     display: flex;
     align-items: center;
-    gap: 0.75rem;
+    justify-content: center;
     width: 100%;
 }
 
 .milestone-icon {
-    font-size: 1.25rem;
+    font-size: 0.85rem;
+    /* Even smaller icon */
     flex-shrink: 0;
     line-height: 1;
 }
 
 .milestone-title {
-    font-size: 0.95rem;
+    font-size: 0.7rem;
+    /* Even smaller text */
     font-weight: 600;
     color: var(--text-primary);
     line-height: 1.3;
+    /* Better line height for multi-line */
     flex-grow: 1;
-    /* Allow text to take available space */
-    text-align: left;
+    text-align: center;
+    /* Center text */
+    width: 100%;
+    white-space: normal;
+    /* Allow multi-line text */
+    word-wrap: break-word;
 }
 
 .milestone-star {
-    font-size: 0.8rem;
-    /* Smaller star as requested */
+    font-size: 0.7rem;
+    /* Smaller star */
     cursor: pointer;
     opacity: 0.3;
     transition: all var(--transition-normal);
@@ -514,7 +563,7 @@ body {
 .milestone-star.active {
     opacity: 1;
     filter: none;
-    text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+    text-shadow: 0 0 8px rgba(255, 215, 0, 0.5);
 }
 
 .milestone-star:hover {

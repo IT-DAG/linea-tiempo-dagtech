@@ -332,7 +332,7 @@ function renderMilestones(years) {
     milestonesContainer.innerHTML = '';
 
     const yearCount = years.length;
-    const timelineWidth = 8000; // Match CSS width
+    const timelineWidth = 3000; // Compact width
     const padding = 100; // Padding on edges
     const usableWidth = timelineWidth - (padding * 2);
 
@@ -348,31 +348,34 @@ function renderMilestones(years) {
         const indexInYear = milestonesInYear.indexOf(milestone);
         const totalInYear = milestonesInYear.length;
 
-        const spreadRange = 400; // Increased range for better spacing to the right
+        // Dynamic spread range - more space when there are many events in a year
+        const baseSpreadRange = 250;
+        const spreadRange = totalInYear > 4 ? baseSpreadRange * 1.5 : baseSpreadRange;
         let offsetX = 0;
 
         if (totalInYear === 1) {
-            offsetX = 50; // Single event: small offset to the right
+            offsetX = 40; // Single event: small offset to the right
         } else {
             // Multiple events: distribute them to the right of the year marker
             const step = spreadRange / totalInYear;
-            offsetX = 30 + step * indexInYear; // Start at 30px to the right, then space out
+            offsetX = 25 + step * indexInYear; // Start closer, then space out
         }
 
         const leftPx = yearPixelPos + offsetX;
 
-        // Determine approximate width based on importance
-        // Normal: ~180px width (160px min-width + padding)
-        // Important: ~220px width
-        const approxWidth = milestone.important ? 240 : 180;
+        // Compact cards - narrower to allow multi-line text
+        const approxWidth = milestone.important ? 160 : 120;
+
+        // Cards are centered with translateX(-50%), so we need to account for that
+        const halfWidth = approxWidth / 2;
 
         positionedMilestones.push({
             data: milestone,
             index: index,
             left: leftPx,
             width: approxWidth,
-            right: leftPx + approxWidth / 2, // Assume centered
-            leftEdge: leftPx - approxWidth / 2
+            right: leftPx + halfWidth, // Right edge (centered card)
+            leftEdge: leftPx - halfWidth // Left edge (centered card)
         });
     });
 
@@ -382,15 +385,19 @@ function renderMilestones(years) {
     const normalTrackEnds = [];
     const importantTrackEnds = [];
 
-    // Configuration
-    const baseConnectorHeight = 60;
-    const trackHeightStep = 110;
+    // Configuration - Keep normal milestones LOW, important milestones HIGH
+    const baseConnectorHeight = 30; // Very low for normal milestones
+    const trackHeightStep = 150; // Very large steps to completely avoid overlaps
 
-    // Important milestones configuration
-    // We define 3 high-altitude tracks to stagger important milestones
+    // Important milestones configuration - Keep them very high
     const availableHeight = window.innerHeight - 100;
-    const importantBaseHeight = Math.min(availableHeight * 0.75, 650);
-    const importantStep = 120; // Vertical distance between overlapping important cards
+    // Define 3 different height levels for important milestones - all HIGH
+    const importantHeights = [
+        Math.min(availableHeight * 0.75, 550), // Very High
+        Math.min(availableHeight * 0.68, 500), // High
+        Math.min(availableHeight * 0.61, 450)  // Medium-High
+    ];
+    const importantStep = 90;
 
     // Sort by position to process left-to-right
     positionedMilestones.sort((a, b) => a.left - b.left);
@@ -406,14 +413,13 @@ function renderMilestones(years) {
         }
 
         let connectorHeight;
-        const cardGap = 20; // Minimum gap between cards
+        const cardGap = 100; // Even larger gap to completely prevent overlaps
+
+        console.log(`Processing milestone: ${pm.data.title}, leftEdge: ${pm.leftEdge}, right: ${pm.right}, width: ${pm.width}`);
 
         if (pm.data.important) {
-            // Important milestones: Use high-altitude tracks
-            // We try to place it at the highest track (0), then go down if occupied
-            // But visually, track 0 should be the *highest* point? 
-            // Let's say track 0 is the base high level. Track 1 is slightly lower.
-
+            // Important milestones: Use varied heights for visual interest
+            // Cycle through the 3 height levels based on track index
             let trackIndex = 0;
             let placed = false;
 
@@ -422,17 +428,20 @@ function renderMilestones(years) {
                     importantTrackEnds[trackIndex] = -Infinity;
                 }
 
+                console.log(`  Important - Track ${trackIndex}: trackEnd=${importantTrackEnds[trackIndex]}, checking if ${pm.leftEdge} > ${importantTrackEnds[trackIndex] + cardGap}`);
+
                 if (pm.leftEdge > importantTrackEnds[trackIndex] + cardGap) {
                     importantTrackEnds[trackIndex] = pm.right;
                     placed = true;
+                    console.log(`  ✓ Placed on track ${trackIndex}, height level ${trackIndex % importantHeights.length}`);
                 } else {
                     trackIndex++;
                 }
             }
 
-            // Calculate height: Base high level - (track * step)
-            // This means if they overlap, the next one appears slightly LOWER than the main high line
-            connectorHeight = importantBaseHeight - (trackIndex * importantStep);
+            // Each track gets a unique height - no cycling!
+            // Start high and go down with each track
+            connectorHeight = Math.min(availableHeight * 0.75, 550) - (trackIndex * 80);
 
         } else {
             // Normal milestones: Standard bottom-up tracks
@@ -444,17 +453,22 @@ function renderMilestones(years) {
                     normalTrackEnds[trackIndex] = -Infinity;
                 }
 
+                console.log(`  Normal - Track ${trackIndex}: trackEnd=${normalTrackEnds[trackIndex]}, checking if ${pm.leftEdge} > ${normalTrackEnds[trackIndex] + cardGap}`);
+
                 if (pm.leftEdge > normalTrackEnds[trackIndex] + cardGap) {
                     normalTrackEnds[trackIndex] = pm.right;
                     placed = true;
+                    console.log(`  ✓ Placed on track ${trackIndex}, height=${baseConnectorHeight + (trackIndex * trackHeightStep)}px`);
                 } else {
                     trackIndex++;
                 }
             }
 
-            // Calculate height based on track
-            connectorHeight = baseConnectorHeight + (trackIndex * trackHeightStep);
+            // Calculate height based on track - but cap at 300px max
+            connectorHeight = Math.min(baseConnectorHeight + (trackIndex * trackHeightStep), 300);
         }
+
+        console.log(`  Final height: ${connectorHeight}px`);
 
         renderMilestoneElement(pm, connectorHeight, false);
     });
@@ -476,10 +490,9 @@ function renderMilestones(years) {
         milestoneEl.innerHTML = `
             <div class="milestone-connector" style="height: ${height}px;"></div>
             <div class="milestone-card">
+                <div class="milestone-star ${milestone.important ? 'active' : ''}" data-index="${index}">⭐</div>
                 <div class="milestone-row">
-                    <span class="milestone-icon">${milestone.icon}</span>
                     <span class="milestone-title">${milestone.title}</span>
-                    <span class="milestone-star ${milestone.important ? 'active' : ''}" data-index="${index}">⭐</span>
                 </div>
             </div>
         `;
@@ -701,6 +714,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Version switcher
     document.getElementById('switchVersionBtn').addEventListener('click', () => {
-        window.location.href = 'index-compact.html';
+        window.location.href = 'index.html';
     });
 });
