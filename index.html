@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Línea de Tiempo DAGTech | Historia de Innovación</title>
+    <meta name="description"
+        content="Línea de tiempo interactiva mostrando la evolución e hitos del Grupo Domingo Alonso (DAGTech) desde 2000 hasta 2025">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+    <!-- Floating Menu Button -->
+    <button id="menuBtn" class="floating-menu-btn" aria-label="Menú">
+        <span class="menu-icon">☰</span>
+    </button>
+
+    <!-- Navigation Menu Overlay -->
+    <div id="navMenu" class="nav-menu">
+        <div class="nav-content">
+            <div class="nav-header">
+                <div class="logo">
+                    <h1>Línea de Tiempo DAGTech</h1>
+                    <p>Historia de Innovación</p>
+                </div>
+                <button id="closeMenuBtn" class="close-btn">×</button>
+            </div>
+
+            <div class="nav-section">
+                <h3>Filtros</h3>
+                <div class="legend">
+                    <button class="filter-btn active" data-category="all">Todos</button>
+                    <button class="filter-btn" data-category="tech">
+                        <span class="dot tech"></span>Tech
+                    </button>
+                    <button class="filter-btn" data-category="product">
+                        <span class="dot product"></span>Productos
+                    </button>
+                    <button class="filter-btn" data-category="org">
+                        <span class="dot org"></span>Organización
+                    </button>
+                </div>
+            </div>
+
+            <div class="nav-section">
+                <h3>Visualización</h3>
+                <button id="toggleImportantBtn" class="action-btn outline">
+                    <span class="icon">⭐</span> Mostrar Solo Importantes
+                </button>
+            </div>
+
+            <div class="nav-section">
+                <h3>Gestión</h3>
+                <button id="openEditorBtn" class="action-btn primary">
+                    Gestionar Datos
+                </button>
+            </div>
+
+            <div class="nav-footer">
+                <div class="stats">
+                    <span><strong id="totalMilestones">0</strong> hitos</span>
+                    <span><strong id="importantMilestones">0</strong> importantes</span>
+                    <span><strong id="yearRange">2000-2025</strong></span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Timeline Container -->
+    <main class="timeline-container">
+        <div class="timeline-wrapper" id="timelineWrapper">
+            <div class="timeline-line"></div>
+            <div class="timeline-years" id="timelineYears"></div>
+            <div class="timeline-milestones" id="timelineMilestones"></div>
+        </div>
+    </main>
+
+    <!-- Editor Panel (Sidebar) -->
+    <div class="editor-panel" id="editorPanel">
+        <div class="editor-header">
+            <h2 class="editor-title">Gestión de Datos</h2>
+            <button class="btn-close" id="closeEditorBtn">✕</button>
+        </div>
+
+        <div class="editor-content">
+            <div class="editor-section">
+                <h3 class="section-title">Importar/Exportar Markdown</h3>
+                <p class="section-description">
+                    Formato: <code>## Año | categoría | ⭐<br>**Título**<br>Descripción...</code>
+                </p>
+
+                <textarea id="markdownInput" class="markdown-textarea"
+                    placeholder="Pega aquí tu contenido en formato markdown...&#10;&#10;Ejemplo:&#10;## 2000 | tech&#10;**DeSy**&#10;El área de desarrollo crea su primera aplicación...&#10;&#10;## 2001 | product | ⭐&#10;**Aplicación Base**&#10;Sistema ERP propio..."></textarea>
+
+                <div class="editor-actions">
+                    <button class="btn btn-primary" id="importMarkdownBtn">
+                        <span class="btn-icon">📥</span>
+                        Importar Datos
+                    </button>
+                    <button class="btn btn-secondary" id="exportMarkdownBtn">
+                        <span class="btn-icon">📤</span>
+                        Exportar a Markdown
+                    </button>
+                </div>
+            </div>
+
+            <div class="editor-section">
+                <h3 class="section-title">Acciones</h3>
+                <div class="editor-actions">
+                    <button class="btn btn-warning" id="resetDataBtn">
+                        <span class="btn-icon">🔄</span>
+                        Restaurar Datos Iniciales
+                    </button>
+                    <button class="btn btn-danger" id="clearDataBtn">
+                        <span class="btn-icon">🗑️</span>
+                        Limpiar Todo
+                    </button>
+                </div>
+            </div>
+
+            <div class="editor-section">
+                <h3 class="section-title">Estadísticas</h3>
+                <div class="stats-container">
+                    <div class="stat-item">
+                        <div class="stat-value" id="totalMilestones">0</div>
+                        <div class="stat-label">Total Hitos</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value" id="importantMilestones">0</div>
+                        <div class="stat-label">Importantes</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value" id="yearRange">-</div>
+                        <div class="stat-label">Años</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Overlay for editor panel -->
+    <div class="overlay" id="overlay"></div>
+
+    <!-- Tooltip -->
+    <div class="tooltip" id="tooltip">
+        <div class="tooltip-content"></div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+
+</html>

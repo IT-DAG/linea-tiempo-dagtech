@@ -1,0 +1,152 @@
+# Plan de Implementación: Línea de Tiempo Interactiva DAGTech
+
+Crear una aplicación web moderna e interactiva que muestre la evolución histórica del grupo de empresas DAGTech mediante una línea de tiempo horizontal con hitos visuales.
+
+## Propuesta de Cambios
+
+### Aplicación Web Principal
+
+#### [NEW] [index.html](file:///Users/aartiles/Repos/Linea%20del%20tiempo%20DAGTech/index.html)
+Estructura HTML principal de la aplicación que incluye:
+- Header con título y controles principales
+- Contenedor de la línea de tiempo interactiva
+- Panel lateral para gestión de datos (importar/exportar markdown)
+- Modal para editar hitos
+- Leyenda de colores por unidad de negocio
+
+---
+
+#### [NEW] [styles.css](file:///Users/aartiles/Repos/Linea%20del%20tiempo%20DAGTech/styles.css)
+Sistema de diseño moderno con:
+- **Paleta de colores premium**: Tres colores principales para unidades de negocio:
+  - `--color-tech`: Azul tecnológico para infraestructura/tecnología
+  - `--color-product`: Verde innovador para aplicaciones/productos
+  - `--color-org`: Púrpura corporativo para organización/procesos
+- **Modo oscuro elegante** con gradientes suaves
+- **Glassmorphism** para tarjetas de hitos
+- **Animaciones fluidas** para hover, expansión y transiciones
+- **Tipografía moderna** (Google Fonts: Inter)
+- **Sistema de alturas variables** para hitos normales vs importantes
+- **Diseño responsive** optimizado para desktop
+
+Componentes visuales:
+- Línea de tiempo horizontal con marcadores de años
+- Líneas verticales conectoras desde años hasta hitos
+- Tarjetas de hitos con hover effects
+- Sistema de iconos SVG o emoji integrados
+- Tooltips con descripción completa
+- Botón de estrella para marcar importantes
+
+---
+
+#### [NEW] [app.js](file:///Users/aartiles/Repos/Linea%20del%20tiempo%20DAGTech/app.js)
+Lógica principal de la aplicación:
+
+**Estructura de datos:**
+```javascript
+{
+  year: 2000,
+  title: "DeSy",
+  description: "El área de desarrollo...",
+  category: "tech", // tech, product, org
+  important: false,
+  icon: "🖥️"
+}
+```
+
+**Funcionalidades:**
+- `parseMarkdown()`: Parser para convertir texto markdown a estructura de datos
+- `renderTimeline()`: Renderiza la línea de tiempo completa
+- `createMilestoneCard()`: Crea tarjeta individual de hito
+- `toggleImportant()`: Marca/desmarca hito como importante
+- `saveToLocalStorage()`: Guarda datos en localStorage
+- `loadFromLocalStorage()`: Carga datos desde localStorage
+- `exportToMarkdown()`: Exporta todos los hitos a formato markdown
+- `importFromMarkdown()`: Importa hitos desde texto markdown
+- `calculateMilestoneHeight()`: Calcula altura aleatoria para variedad visual
+- Event listeners para interacciones
+
+**Datos iniciales:**
+Parsear los 30+ hitos proporcionados por el usuario y clasificarlos inteligentemente por categoría según sus contenidos (ERP/aplicaciones → product, servidores/CPD → tech, DTO/certificaciones → org)
+
+---
+
+#### [NEW] [data.md](file:///Users/aartiles/Repos/Linea%20del%20tiempo%20DAGTech/data.md)
+Archivo markdown de respaldo que contiene todos los hitos en formato legible y editable. Este archivo sirve como:
+- Fuente de verdad inicial
+- Formato para importar/exportar
+- Documentación de la línea de tiempo
+
+Formato propuesto:
+```markdown
+## 2000 | tech
+**DeSy**
+El área de desarrollo de Domingo Alonso Group crea su primera aplicación...
+
+## 2001 | tech | ⭐
+**Primeros servidores web Linux (DAWEB)**
+Descripción...
+```
+
+---
+
+### Sistema de Iconos
+
+Generaré iconos temáticos basados en el contenido de cada hito:
+- 🖥️ Aplicaciones/Software
+- 🌐 Infraestructura web
+- ☁️ Cloud/Nube
+- 🏢 Organización/Empresa
+- 🔒 Seguridad
+- 📊 Datos/Analytics
+- 🚗 Movilidad/Rent a car
+- 🤖 Automatización
+- 📱 Mobile
+
+---
+
+### Panel de Gestión
+
+**Editor Markdown:**
+- Textarea grande con sintaxis clara
+- Botón "Importar desde Markdown"
+- Botón "Exportar a Markdown"
+- Validación de formato
+- Preview en tiempo real
+
+**Controles:**
+- Toggle para mostrar solo importantes
+- Filtro por categoría/color
+- Reset a datos iniciales
+
+---
+
+## Decisiones de Diseño
+
+1. **Estética Premium**: Uso de gradientes, glassmorphism y animaciones suaves para crear una experiencia visual impactante
+2. **Alturas variables**: Los hitos normales tendrán alturas entre 60-120px, los importantes entre 150-200px
+3. **Separación visual clara**: Años espaciados uniformemente, hitos posicionados entre años
+4. **Interactividad rica**: Hover states, click para marcar importante, smooth scrolling
+5. **LocalStorage first**: Los datos se guardan automáticamente en localStorage tras cada cambio
+6. **Markdown como formato universal**: Permite fácil edición manual y versionado
+
+---
+
+## Plan de Verificación
+
+### Pruebas Visuales
+- Verificar que los 30+ hitos iniciales se renderizan correctamente
+- Confirmar que los hitos importantes se muestran más grandes y elevados
+- Validar animaciones suaves y transiciones
+
+### Pruebas Funcionales
+- Importar texto markdown y verificar parseo correcto
+- Exportar datos y verificar formato markdown válido
+- Marcar/desmarcar hitos como importantes
+- Verificar persistencia en localStorage (recargar página)
+
+### Pruebas de Diseño
+- Confirmar que el diseño es visualmente impactante
+- Verificar legibilidad de textos
+- Validar contraste de colores
+- Comprobar tooltips en hover
