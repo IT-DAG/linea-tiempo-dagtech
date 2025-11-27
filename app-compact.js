@@ -56,6 +56,7 @@ let milestones = [];
 let filteredCategory = 'all';
 let showOnlyImportant = false;
 let milestonePositions = {}; // Store custom vertical offsets by milestone ID (year-title)
+let isEditMode = false; // Edit mode for dragging cards
 
 // ============================================
 // UTILITY FUNCTIONS
@@ -411,6 +412,7 @@ let baseHeight = 0;
 
 function dragStart(e, element, id, originalBaseHeight) {
     if (e.target.classList.contains('milestone-star')) return; // Don't drag when clicking star
+    if (!isEditMode) return; // Only allow dragging in edit mode
 
     isDragging = true;
     currentDragItem = element;
@@ -481,8 +483,8 @@ function randomBetween(min, max) {
 // ============================================
 
 function showTooltip(event, milestone) {
-    // Don't show tooltip while dragging
-    if (isDragging) return;
+    // Don't show tooltip while dragging or in edit mode
+    if (isDragging || isEditMode) return;
 
     const tooltip = document.getElementById('tooltip');
     const tooltipContent = tooltip.querySelector('.tooltip-content');
@@ -602,6 +604,23 @@ function resetPositions() {
         saveToLocalStorage();
         renderTimeline();
         alert('✅ Posiciones reseteadas');
+    }
+}
+
+function toggleEditMode() {
+    isEditMode = !isEditMode;
+    const btn = document.getElementById('toggleEditModeBtn');
+
+    if (isEditMode) {
+        btn.classList.add('active');
+        btn.innerHTML = '<span class="icon">✏️</span> Salir de Modo Edición';
+        document.body.classList.add('edit-mode');
+        // Hide any visible tooltip
+        hideTooltip();
+    } else {
+        btn.classList.remove('active');
+        btn.innerHTML = '<span class="icon">✏️</span> Modo Edición';
+        document.body.classList.remove('edit-mode');
     }
 }
 
@@ -758,6 +777,15 @@ document.addEventListener('DOMContentLoaded', async () => {
     document.getElementById('resetPositionsBtn').addEventListener('click', resetPositions);
     document.getElementById('clearDataBtn').addEventListener('click', clearAllData);
     document.getElementById('exportJpgBtn').addEventListener('click', exportToJPG);
+    document.getElementById('toggleEditModeBtn').addEventListener('click', toggleEditMode);
+
+    // Double click on timeline wrapper to toggle edit mode
+    document.getElementById('timelineWrapper').addEventListener('dblclick', (e) => {
+        // Only toggle if clicking on the wrapper itself, not on cards
+        if (e.target.id === 'timelineWrapper' || e.target.id === 'timelineMilestones' || e.target.id === 'timelineYears') {
+            toggleEditMode();
+        }
+    });
 
     // Version switcher
     document.getElementById('switchVersionBtn').addEventListener('click', () => {
