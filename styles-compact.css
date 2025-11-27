@@ -60,6 +60,17 @@ body.edit-mode #timelineWrapper {
     background: linear-gradient(135deg, rgba(139, 92, 246, 0.05) 0%, rgba(59, 130, 246, 0.05) 100%);
 }
 
+/* In edit mode, make connectors non-interactive and increase card z-index */
+body.edit-mode .milestone-connector {
+    pointer-events: none;
+}
+
+body.edit-mode .milestone-card {
+    pointer-events: auto;
+    position: relative;
+    z-index: 100 !important;
+}
+
 * {
     margin: 0;
     padding: 0;
