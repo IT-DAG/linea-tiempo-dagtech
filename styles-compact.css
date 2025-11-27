@@ -527,6 +527,8 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
+    z-index: 1;
+    /* Low z-index for connectors */
 }
 
 /* Star at the T junction - positioned on the card */
@@ -546,6 +548,8 @@ body {
     /* Narrower cards for multi-line text */
     box-shadow: 0 2px 12px rgba(0, 0, 0, 0.2);
     transition: all var(--transition-normal);
+    z-index: 10;
+    /* Higher z-index for cards */
 }
 
 .milestone-card .milestone-star {

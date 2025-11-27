@@ -490,6 +490,8 @@ body {
     flex-shrink: 0;
     margin-bottom: 2px;
     /* Small gap from timeline line */
+    z-index: 1;
+    /* Low z-index for connectors */
 }
 
 .milestone-card {
@@ -506,6 +508,8 @@ body {
     /* Enable grab cursor */
     user-select: none;
     /* Prevent text selection while dragging */
+    z-index: 10;
+    /* Higher z-index for cards */
 }
 
 .milestone-card:active {
