@@ -368,7 +368,6 @@ function renderMilestones(years) {
         milestoneEl.setAttribute('data-base-zindex', milestone.important ? 100 : 10 + Math.floor(finalHeight / 10));
         milestoneEl.style.cssText = `
             left: ${pm.left}px;
-            z-index: ${milestone.important ? 100 : 10 + Math.floor(finalHeight / 10)}; /* Important always on top */
         `;
 
         milestoneEl.innerHTML = `
