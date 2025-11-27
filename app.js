@@ -409,6 +409,9 @@ function dragStart(e, element, id, originalBaseHeight) {
     const connector = element.querySelector('.milestone-connector');
     initialHeight = parseInt(connector.style.height || baseHeight);
 
+    // Hide tooltip during drag
+    hideTooltip();
+
     element.querySelector('.milestone-card').classList.add('dragging');
     document.body.style.cursor = 'grabbing';
 
@@ -465,6 +468,9 @@ function randomBetween(min, max) {
 // ============================================
 
 function showTooltip(event, milestone) {
+    // Don't show tooltip while dragging
+    if (isDragging) return;
+
     const tooltip = document.getElementById('tooltip');
     const tooltipContent = tooltip.querySelector('.tooltip-content');
 
