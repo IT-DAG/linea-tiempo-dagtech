@@ -538,10 +538,18 @@ function closeEditor() {
 
 document.addEventListener('DOMContentLoaded', async () => {
     // Load data
+    let loadedFromFetch = false;
     try {
         const response = await fetch('data.md');
         if (response.ok) {
-            INITIAL_DATA = await response.text();
+            const text = await response.text();
+            if (text) {
+                INITIAL_DATA = text;
+                milestones = parseMarkdown(INITIAL_DATA);
+                saveToLocalStorage(); // Update local storage with fresh data
+                loadedFromFetch = true;
+                console.log('Datos cargados exitosamente desde data.md');
+            }
         } else {
             console.error('Error loading data.md');
         }
@@ -549,10 +557,15 @@ document.addEventListener('DOMContentLoaded', async () => {
         console.error('Error fetching data:', e);
     }
 
-    if (!loadFromLocalStorage()) {
-        if (INITIAL_DATA) {
-            milestones = parseMarkdown(INITIAL_DATA);
-            saveToLocalStorage();
+    // Fallback to local storage if fetch failed
+    if (!loadedFromFetch) {
+        if (!loadFromLocalStorage()) {
+            if (INITIAL_DATA) {
+                milestones = parseMarkdown(INITIAL_DATA);
+                saveToLocalStorage();
+            }
+        } else {
+            console.log('Datos cargados desde localStorage (offline o error de fetch)');
         }
     }
 
