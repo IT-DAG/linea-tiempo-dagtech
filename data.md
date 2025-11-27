@@ -11,9 +11,9 @@ Descripción completa del hito...
 ```
 
 ### Categorías disponibles:
-- `tech`: Tecnología e Infraestructura
-- `product`: Productos y Aplicaciones  
-- `org`: Organización y Procesos
+- `aida`: color rojo
+- `dto`: color azul
+- `negocio`: color verde
 
 ---
 ## 2000 | aida | ⭐

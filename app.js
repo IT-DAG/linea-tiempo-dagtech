@@ -519,6 +519,38 @@ function closeEditor() {
     document.getElementById('overlay').classList.remove('visible');
 }
 
+function exportToJPG() {
+    const element = document.getElementById('timelineWrapper');
+    const btn = document.getElementById('exportJpgBtn');
+    const originalText = btn.innerHTML;
+
+    btn.innerHTML = '<span class="icon">⏳</span> Generando...';
+    btn.disabled = true;
+
+    // Use html2canvas to capture the element
+    html2canvas(element, {
+        scale: 2, // Higher quality
+        backgroundColor: '#111111', // Ensure dark background
+        logging: false,
+        useCORS: true
+    }).then(canvas => {
+        // Create download link
+        const link = document.createElement('a');
+        link.download = 'linea-tiempo-dagtech.jpg';
+        link.href = canvas.toDataURL('image/jpeg', 0.9);
+        link.click();
+
+        btn.innerHTML = originalText;
+        btn.disabled = false;
+        alert('✅ Imagen exportada correctamente');
+    }).catch(err => {
+        console.error('Error exportando imagen:', err);
+        btn.innerHTML = originalText;
+        btn.disabled = false;
+        alert('❌ Error al exportar la imagen');
+    });
+}
+
 // ============================================
 // EVENT LISTENERS
 // ============================================
@@ -605,6 +637,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     document.getElementById('exportMarkdownBtn').addEventListener('click', exportMarkdownToTextarea);
     document.getElementById('resetDataBtn').addEventListener('click', resetToInitialData);
     document.getElementById('clearDataBtn').addEventListener('click', clearAllData);
+    document.getElementById('exportJpgBtn').addEventListener('click', exportToJPG);
 
     // Version switcher
     document.getElementById('switchVersionBtn').addEventListener('click', () => {
