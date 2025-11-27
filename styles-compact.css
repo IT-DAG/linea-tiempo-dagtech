@@ -105,6 +105,35 @@ body {
     pointer-events: all;
 }
 
+.milestone-card {
+    background: var(--card-bg);
+    border: 1px solid var(--card-border);
+    border-radius: 6px;
+    padding: 0.5rem;
+    width: 100%;
+    height: 100%;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    cursor: grab;
+    /* Enable grab cursor */
+    user-select: none;
+    /* Prevent text selection while dragging */
+}
+
+.milestone-card:active {
+    cursor: grabbing;
+}
+
+.milestone-card.dragging {
+    cursor: grabbing;
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
+    transform: scale(1.05);
+    z-index: 1000;
+}
+
 .nav-content {
     width: 350px;
     height: 100%;

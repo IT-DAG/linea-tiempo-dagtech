@@ -55,6 +55,7 @@ const ICON_MAP = {
 let milestones = [];
 let filteredCategory = 'all';
 let showOnlyImportant = false;
+let milestonePositions = {}; // Store custom vertical offsets by milestone ID (year-title)
 
 // ============================================
 // UTILITY FUNCTIONS
@@ -136,9 +137,19 @@ function exportToMarkdown(milestones) {
 
 function saveToLocalStorage() {
     localStorage.setItem('dagtech_milestones', JSON.stringify(milestones));
+    localStorage.setItem('dagtech_milestone_positions', JSON.stringify(milestonePositions));
 }
 
 function loadFromLocalStorage() {
+    const storedPositions = localStorage.getItem('dagtech_milestone_positions');
+    if (storedPositions) {
+        try {
+            milestonePositions = JSON.parse(storedPositions);
+        } catch (e) {
+            console.error('Error loading positions from localStorage:', e);
+        }
+    }
+
     const stored = localStorage.getItem('dagtech_milestones');
     if (stored) {
         try {
@@ -329,18 +340,23 @@ function renderMilestones(years) {
         const milestone = pm.data;
         const index = pm.index;
 
+        const milestoneId = `${milestone.year}-${milestone.title.replace(/\s+/g, '-').toLowerCase()}`;
+        const customOffset = milestonePositions[milestoneId] || 0;
+        const finalHeight = Math.max(20, height + customOffset); // Minimum height 20px
+
         const milestoneEl = document.createElement('div');
         milestoneEl.className = `milestone ${milestone.important ? 'important' : ''}`;
         if (hidden) milestoneEl.classList.add('hidden');
 
         milestoneEl.setAttribute('data-category', milestone.category);
+        milestoneEl.setAttribute('data-id', milestoneId);
         milestoneEl.style.cssText = `
             left: ${pm.left}px;
-            z-index: ${milestone.important ? 100 : 10 + Math.floor(height / 10)}; /* Important always on top */
+            z-index: ${milestone.important ? 100 : 10 + Math.floor(finalHeight / 10)}; /* Important always on top */
         `;
 
         milestoneEl.innerHTML = `
-            <div class="milestone-connector" style="height: ${height}px;"></div>
+            <div class="milestone-connector" style="height: ${finalHeight}px;"></div>
             <div class="milestone-card">
                 <div class="milestone-row">
                     <span class="milestone-icon">${milestone.icon}</span>
@@ -361,8 +377,83 @@ function renderMilestones(years) {
             toggleImportant(index);
         });
 
+        // Drag & Drop functionality
+        const card = milestoneEl.querySelector('.milestone-card');
+        card.addEventListener('mousedown', (e) => dragStart(e, milestoneEl, milestoneId, height));
+
         milestonesContainer.appendChild(milestoneEl);
     }
+}
+
+// ============================================
+// DRAG & DROP LOGIC
+// ============================================
+
+let isDragging = false;
+let currentDragItem = null;
+let dragStartY = 0;
+let initialHeight = 0;
+let currentMilestoneId = null;
+let baseHeight = 0;
+
+function dragStart(e, element, id, originalBaseHeight) {
+    if (e.target.classList.contains('milestone-star')) return; // Don't drag when clicking star
+
+    isDragging = true;
+    currentDragItem = element;
+    currentMilestoneId = id;
+    baseHeight = originalBaseHeight;
+    dragStartY = e.clientY;
+
+    // Get current height
+    const connector = element.querySelector('.milestone-connector');
+    initialHeight = parseInt(connector.style.height || baseHeight);
+
+    element.querySelector('.milestone-card').classList.add('dragging');
+    document.body.style.cursor = 'grabbing';
+
+    document.addEventListener('mousemove', drag);
+    document.addEventListener('mouseup', dragEnd);
+}
+
+function drag(e) {
+    if (!isDragging) return;
+    e.preventDefault();
+
+    const deltaY = dragStartY - e.clientY; // Moving up increases height
+    const newHeight = Math.max(20, initialHeight + deltaY); // Min height 20px
+
+    const connector = currentDragItem.querySelector('.milestone-connector');
+    connector.style.height = `${newHeight}px`;
+
+    // Update z-index based on new height
+    currentDragItem.style.zIndex = 10 + Math.floor(newHeight / 10);
+}
+
+function dragEnd(e) {
+    if (!isDragging) return;
+
+    isDragging = false;
+    document.body.style.cursor = 'default';
+    currentDragItem.querySelector('.milestone-card').classList.remove('dragging');
+
+    const connector = currentDragItem.querySelector('.milestone-connector');
+    const finalHeight = parseInt(connector.style.height);
+
+    // Calculate offset from base height
+    const offset = finalHeight - baseHeight;
+
+    if (offset !== 0) {
+        milestonePositions[currentMilestoneId] = offset;
+    } else {
+        delete milestonePositions[currentMilestoneId];
+    }
+
+    saveToLocalStorage();
+
+    document.removeEventListener('mousemove', drag);
+    document.removeEventListener('mouseup', dragEnd);
+    currentDragItem = null;
 }
 
 function randomBetween(min, max) {
@@ -483,6 +574,15 @@ async function resetToInitialData() {
         saveToLocalStorage();
         renderTimeline();
         alert('✅ Datos restaurados a la versión inicial');
+    }
+}
+
+function resetPositions() {
+    if (confirm('¿Estás seguro de resetear todas las posiciones personalizadas?')) {
+        milestonePositions = {};
+        saveToLocalStorage();
+        renderTimeline();
+        alert('✅ Posiciones reseteadas');
     }
 }
 
@@ -636,6 +736,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     document.getElementById('importMarkdownBtn').addEventListener('click', importFromMarkdown);
     document.getElementById('exportMarkdownBtn').addEventListener('click', exportMarkdownToTextarea);
     document.getElementById('resetDataBtn').addEventListener('click', resetToInitialData);
+    document.getElementById('resetPositionsBtn').addEventListener('click', resetPositions);
     document.getElementById('clearDataBtn').addEventListener('click', clearAllData);
     document.getElementById('exportJpgBtn').addEventListener('click', exportToJPG);
 

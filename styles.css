@@ -466,16 +466,30 @@ body {
 }
 
 .milestone-card {
-    background: var(--bg-glass);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    border: 1px solid var(--border-color);
-    border-radius: 12px;
-    padding: 0.75rem 1rem;
-    width: 100%;
-    /* Take full width of container defined in JS */
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
-    transition: all var(--transition-normal);
+    background: var(--card-bg);
+    border: 1px solid var(--card-border);
+    border-radius: 8px;
+    padding: 1rem;
+    width: 200px;
+    /* Fixed width for better layout */
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+    transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
+    position: relative;
+    cursor: grab;
+    /* Enable grab cursor */
+    user-select: none;
+    /* Prevent text selection while dragging */
+}
+
+.milestone-card:active {
+    cursor: grabbing;
+}
+
+.milestone-card.dragging {
+    cursor: grabbing;
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.5);
+    transform: scale(1.02);
+    z-index: 1000;
 }
 
 .milestone-row {
