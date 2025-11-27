@@ -578,6 +578,17 @@ body {
     opacity: 1;
 }
 
+/* Disable hover effects in edit mode */
+body.edit-mode .milestone:hover .milestone-card {
+    transform: none;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+    border-color: var(--card-border);
+}
+
+body.edit-mode .milestone:hover .milestone-connector {
+    opacity: 0.6;
+}
+
 .milestone-icon {
     font-size: 1.2rem;
     /* Much smaller */
