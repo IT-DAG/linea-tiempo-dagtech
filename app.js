@@ -381,7 +381,14 @@ function renderMilestones(years) {
 
         // Drag & Drop functionality
         const card = milestoneEl.querySelector('.milestone-card');
-        card.addEventListener('mousedown', (e) => dragStart(e, milestoneEl, milestoneId, height));
+        const row = milestoneEl.querySelector('.milestone-row');
+        const title = milestoneEl.querySelector('.milestone-title');
+
+        // Add listeners to multiple elements to ensure capture
+        const dragHandler = (e) => dragStart(e, milestoneEl, milestoneId, height);
+        card.addEventListener('mousedown', dragHandler);
+        if (row) row.addEventListener('mousedown', dragHandler);
+        if (title) title.addEventListener('mousedown', dragHandler);
 
         milestonesContainer.appendChild(milestoneEl);
     }
