@@ -365,6 +365,7 @@ function renderMilestones(years) {
 
         milestoneEl.setAttribute('data-category', milestone.category);
         milestoneEl.setAttribute('data-id', milestoneId);
+        milestoneEl.setAttribute('data-base-zindex', milestone.important ? 100 : 10 + Math.floor(finalHeight / 10));
         milestoneEl.style.cssText = `
             left: ${pm.left}px;
             z-index: ${milestone.important ? 100 : 10 + Math.floor(finalHeight / 10)}; /* Important always on top */
@@ -430,6 +431,9 @@ function dragStart(e, element, id, originalBaseHeight) {
     element.querySelector('.milestone-card').classList.add('dragging');
     document.body.style.cursor = 'grabbing';
 
+    // Bring to front while dragging
+    element.style.zIndex = 9999;
+
     document.addEventListener('mousemove', drag);
     document.addEventListener('mouseup', dragEnd);
 }
@@ -466,6 +470,10 @@ function dragEnd(e) {
     } else {
         delete milestonePositions[currentMilestoneId];
     }
+
+    // Restore original z-index based on new height
+    const baseZIndex = currentDragItem.getAttribute('data-base-zindex') || 10;
+    currentDragItem.style.zIndex = Math.max(parseInt(baseZIndex), 10 + Math.floor(finalHeight / 10));
 
     saveToLocalStorage();
 
