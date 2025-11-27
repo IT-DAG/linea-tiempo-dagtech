@@ -476,6 +476,8 @@ body {
     /* Just above the line (40px line bottom + 2px gap) */
     transform: translateX(-50%);
     /* Only translate X, Y is handled by bottom */
+    pointer-events: none;
+    /* Make milestone container non-interactive */
 }
 
 .milestone.hidden {
@@ -510,6 +512,8 @@ body {
     /* Prevent text selection while dragging */
     z-index: 10;
     /* Higher z-index for cards */
+    pointer-events: auto;
+    /* Make cards interactive */
 }
 
 .milestone-card:active {
