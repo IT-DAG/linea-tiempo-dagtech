@@ -4,14 +4,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Línea de Tiempo DAGTech | Historia de Innovación</title>
+    <title>Línea de Tiempo DAGTech | Versión Alternada</title>
     <meta name="description"
-        content="Línea de tiempo interactiva mostrando la evolución e hitos del Grupo Domingo Alonso (DAGTech) desde 2000 hasta 2025">
+        content="Línea de tiempo interactiva con eventos alternados mostrando la evolución e hitos del Grupo Domingo Alonso (DAGTech) desde 2000 hasta 2025">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
         rel="stylesheet">
-    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="styles-alternating.css">
     <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
 </head>
 
@@ -27,7 +27,7 @@
             <div class="nav-header">
                 <div class="logo">
                     <h1>Línea de Tiempo DAGTech</h1>
-                    <p>Historia de Innovación</p>
+                    <p>Versión Alternada</p>
                 </div>
                 <button id="closeMenuBtn" class="close-btn">×</button>
             </div>
@@ -53,7 +53,7 @@
                 <button id="toggleImportantBtn" class="action-btn outline">
                     <span class="icon">⭐</span> Mostrar Solo Importantes
                 </button>
-                <button id="toggleEditModeBtn" class="action-btn outline">
+                <button id="toggleEditModeBtn" class="action-btn outline" style="margin-top: 0.5rem;">
                     <span class="icon">✏️</span> Modo Edición
                 </button>
             </div>
@@ -75,7 +75,7 @@
             <div class="nav-section">
                 <h3>Versión</h3>
                 <button id="switchVersionBtn" class="action-btn outline">
-                    <span class="icon">🔄</span> Cambiar a Alternada
+                    <span class="icon">🔄</span> Cambiar a Original
                 </button>
             </div>
 
@@ -92,9 +92,14 @@
     <!-- Timeline Container -->
     <main class="timeline-container">
         <div class="timeline-wrapper" id="timelineWrapper">
-            <div class="timeline-line"></div>
+            <!-- Central line -->
+            <div class="timeline-line-center"></div>
+
+            <!-- Year markers -->
             <div class="timeline-years" id="timelineYears"></div>
-            <div class="timeline-milestones" id="timelineMilestones"></div>
+
+            <!-- Events container -->
+            <div class="timeline-events" id="timelineEvents"></div>
         </div>
     </main>
 
@@ -113,7 +118,7 @@
                 </p>
 
                 <textarea id="markdownInput" class="markdown-textarea"
-                    placeholder="Pega aquí tu contenido en formato markdown...&#10;&#10;Ejemplo:&#10;## 2000 | tech&#10;**DeSy**&#10;El área de desarrollo crea su primera aplicación...&#10;&#10;## 2001 | product | ⭐&#10;**Aplicación Base**&#10;Sistema ERP propio..."></textarea>
+                    placeholder="Pega aquí tu contenido en formato markdown...&#10;&#10;Ejemplo:&#10;## 2000 | aida&#10;**DeSy**&#10;El área de desarrollo crea su primera aplicación...&#10;&#10;## 2001 | negocio | ⭐&#10;**Aplicación Base**&#10;Sistema ERP propio..."></textarea>
 
                 <div class="editor-actions">
                     <button class="btn btn-primary" id="importMarkdownBtn">
@@ -134,10 +139,6 @@
                         <span class="btn-icon">🔄</span>
                         Restaurar Datos Iniciales
                     </button>
-                    <button class="btn btn-warning" id="resetPositionsBtn">
-                        <span class="btn-icon">📏</span>
-                        Resetear Posiciones
-                    </button>
                     <button class="btn btn-danger" id="clearDataBtn">
                         <span class="btn-icon">🗑️</span>
                         Limpiar Todo
@@ -149,15 +150,15 @@
                 <h3 class="section-title">Estadísticas</h3>
                 <div class="stats-container">
                     <div class="stat-item">
-                        <div class="stat-value" id="totalMilestones">0</div>
+                        <div class="stat-value" id="statTotal">0</div>
                         <div class="stat-label">Total Hitos</div>
                     </div>
                     <div class="stat-item">
-                        <div class="stat-value" id="importantMilestones">0</div>
+                        <div class="stat-value" id="statImportant">0</div>
                         <div class="stat-label">Importantes</div>
                     </div>
                     <div class="stat-item">
-                        <div class="stat-value" id="yearRange">-</div>
+                        <div class="stat-value" id="statYears">-</div>
                         <div class="stat-label">Años</div>
                     </div>
                 </div>
@@ -173,7 +174,7 @@
         <div class="tooltip-content"></div>
     </div>
 
-    <script src="app.js"></script>
+    <script src="app-alternating.js"></script>
 </body>
 
 </html>

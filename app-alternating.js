@@ -55,8 +55,6 @@ const ICON_MAP = {
 let milestones = [];
 let filteredCategory = 'all';
 let showOnlyImportant = false;
-let milestonePositions = {}; // Store custom vertical offsets by milestone ID (year-title)
-let isEditMode = false; // Edit mode for dragging cards
 
 // ============================================
 // UTILITY FUNCTIONS
@@ -137,21 +135,11 @@ function exportToMarkdown(milestones) {
 }
 
 function saveToLocalStorage() {
-    localStorage.setItem('dagtech_milestones', JSON.stringify(milestones));
-    localStorage.setItem('dagtech_milestone_positions', JSON.stringify(milestonePositions));
+    localStorage.setItem('dagtech_milestones_alt', JSON.stringify(milestones));
 }
 
 function loadFromLocalStorage() {
-    const storedPositions = localStorage.getItem('dagtech_milestone_positions');
-    if (storedPositions) {
-        try {
-            milestonePositions = JSON.parse(storedPositions);
-        } catch (e) {
-            console.error('Error loading positions from localStorage:', e);
-        }
-    }
-
-    const stored = localStorage.getItem('dagtech_milestones');
+    const stored = localStorage.getItem('dagtech_milestones_alt');
     if (stored) {
         try {
             milestones = JSON.parse(stored);
@@ -185,18 +173,30 @@ function renderTimeline() {
         years.push(year);
     }
 
-    renderYears(years);
-    renderMilestones(years);
+    // renderYears(years); // Disabled as per user request
+    renderEvents(years);
     updateStats();
 }
 
+/*
 function renderYears(years) {
     const yearsContainer = document.getElementById('timelineYears');
+    const wrapper = document.getElementById('timelineWrapper');
+    const containerWidth = wrapper.offsetWidth;
+    const padding = 100;
+    const usableWidth = containerWidth - (padding * 2);
+    const yearCount = years.length;
+
     yearsContainer.innerHTML = '';
 
-    years.forEach(year => {
+    years.forEach((year, index) => {
         const yearMarker = document.createElement('div');
         yearMarker.className = 'year-marker';
+        
+        // Calculate position
+        const leftPercent = (index / (yearCount - 1)) * 100;
+        yearMarker.style.left = `calc(${padding}px + ${leftPercent}% * (100% - ${padding * 2}px) / 100%)`;
+        
         yearMarker.innerHTML = `
             <div class="year-dot"></div>
             <div class="year-label">${year}</div>
@@ -204,279 +204,152 @@ function renderYears(years) {
         yearsContainer.appendChild(yearMarker);
     });
 }
+*/
 
-function renderMilestones(years) {
-    const milestonesContainer = document.getElementById('timelineMilestones');
-    milestonesContainer.innerHTML = '';
+function renderEvents(years) {
+    const eventsContainer = document.getElementById('timelineEvents');
+    const wrapper = document.getElementById('timelineWrapper');
+    eventsContainer.innerHTML = '';
 
+    const containerWidth = wrapper.offsetWidth;
+    const padding = 80; // Reduced padding
+    const usableWidth = containerWidth - (padding * 2);
     const yearCount = years.length;
-    const timelineWidth = 8000; // Match CSS width
-    const padding = 100; // Padding on edges
-    const usableWidth = timelineWidth - (padding * 2);
 
-    // 1. Calculate horizontal positions for all milestones first
-    const positionedMilestones = [];
-
-    milestones.forEach((milestone, index) => {
-        const yearIndex = years.indexOf(milestone.year);
-        if (yearIndex === -1) return;
-
-        const yearPixelPos = padding + (yearIndex / (yearCount - 1)) * usableWidth;
-        const milestonesInYear = milestones.filter(m => m.year === milestone.year);
-        const indexInYear = milestonesInYear.indexOf(milestone);
-        const totalInYear = milestonesInYear.length;
-
-        const spreadRange = 400; // Increased range for better spacing to the right
-        let offsetX = 0;
-
-        if (totalInYear === 1) {
-            offsetX = 50; // Single event: small offset to the right
-        } else {
-            // Multiple events: distribute them to the right of the year marker
-            const step = spreadRange / totalInYear;
-            offsetX = 30 + step * indexInYear; // Start at 30px to the right, then space out
-        }
-
-        const leftPx = yearPixelPos + offsetX;
-
-        // Determine approximate width based on importance
-        // Normal: ~180px width (160px min-width + padding)
-        // Important: ~220px width
-        const approxWidth = milestone.important ? 240 : 180;
-
-        positionedMilestones.push({
-            data: milestone,
-            index: index,
-            left: leftPx,
-            width: approxWidth,
-            right: leftPx + approxWidth / 2, // Assume centered
-            leftEdge: leftPx - approxWidth / 2
-        });
+    // Filter milestones based on current filters
+    const visibleMilestones = milestones.filter(m => {
+        const categoryMatch = filteredCategory === 'all' || filteredCategory === m.category;
+        const importantMatch = !showOnlyImportant || m.important;
+        return categoryMatch && importantMatch;
     });
 
-    // 2. Assign tracks (vertical levels) to avoid collision
+    // Group by year
+    const eventsByYear = {};
+    visibleMilestones.forEach(m => {
+        if (!eventsByYear[m.year]) eventsByYear[m.year] = [];
+        eventsByYear[m.year].push(m);
+    });
 
-    // Track systems
-    const normalTrackEnds = [];
-    const importantTrackEnds = [];
+    // Render events with vertical stacking
+    years.forEach((year, yearIndex) => {
+        const yearEvents = eventsByYear[year];
+        if (!yearEvents || yearEvents.length === 0) return;
 
-    // Configuration
-    const baseConnectorHeight = 60;
-    const trackHeightStep = 110;
+        // Calculate base horizontal position for the year
+        const leftPercent = (yearIndex / (yearCount - 1)) * 100;
+        const baseX = padding + (usableWidth * leftPercent / 100);
 
-    // Important milestones configuration
-    // We define 3 high-altitude tracks to stagger important milestones
-    const availableHeight = window.innerHeight - 100;
-    const importantBaseHeight = Math.min(availableHeight * 0.75, 650);
-    const importantStep = 120; // Vertical distance between overlapping important cards
+        // Determine base direction for this year (alternate to avoid year-to-year collisions)
+        // Year 2000: Above, 2001: Below, etc.
+        const baseDirection = yearIndex % 2 === 0 ? 'above' : 'below';
 
-    // Sort by position to process left-to-right
-    positionedMilestones.sort((a, b) => a.left - b.left);
+        yearEvents.forEach((milestone, eventIndex) => {
+            // Stack events vertically within the same year
+            // If year has multiple events, we can alternate them or stack them
+            // Let's stack them to save horizontal space
 
-    positionedMilestones.forEach(pm => {
-        // Check visibility filters
-        const shouldHide = (filteredCategory !== 'all' && filteredCategory !== pm.data.category) ||
-            (showOnlyImportant && !pm.data.important);
+            // Logic: 
+            // Event 0: Base height
+            // Event 1: Higher
+            // Event 2: Even higher
 
-        if (shouldHide) {
-            renderMilestoneElement(pm, 0, true);
-            return;
-        }
+            // To optimize further, we can alternate direction WITHIN the year if there are many events
+            // But user asked to play with heights.
 
-        let connectorHeight;
-        const cardGap = 20; // Minimum gap between cards
+            // Let's try alternating direction for every event to maximize spread?
+            // No, that might be messy. Let's stick to year-based direction but stack heights.
 
-        if (pm.data.important) {
-            // Important milestones: Use high-altitude tracks
-            // We try to place it at the highest track (0), then go down if occupied
-            // But visually, track 0 should be the *highest* point? 
-            // Let's say track 0 is the base high level. Track 1 is slightly lower.
+            // However, if we have MANY events (e.g. 4), stacking all 4 might get too tall.
+            // So let's split them: first half above, second half below?
+            // Or just alternate: Up, Down, Up (higher), Down (lower)
 
-            let trackIndex = 0;
-            let placed = false;
+            const isEven = eventIndex % 2 === 0;
+            let position = baseDirection;
 
-            while (!placed) {
-                if (importantTrackEnds[trackIndex] === undefined) {
-                    importantTrackEnds[trackIndex] = -Infinity;
-                }
+            // If there are more than 2 events, force alternating to balance
+            if (yearEvents.length > 2) {
+                position = isEven ? 'above' : 'below';
+            } else {
+                // Keep year consistency for small numbers
+                position = baseDirection;
+            }
 
-                if (pm.leftEdge > importantTrackEnds[trackIndex] + cardGap) {
-                    importantTrackEnds[trackIndex] = pm.right;
-                    placed = true;
+            // Calculate height level (0, 1, 2...)
+            // If we alternate, we need to group by direction to calculate height
+            // But simple index based math works too:
+            // Index 0 (Above): Level 0
+            // Index 1 (Below): Level 0
+            // Index 2 (Above): Level 1
+            // Index 3 (Below): Level 1
+
+            let level = 0;
+            if (yearEvents.length > 2) {
+                level = Math.floor(eventIndex / 2);
+            } else {
+                // If same direction, stack
+                level = eventIndex;
+            }
+
+            const baseHeight = 60;
+            const stepHeight = 110; // Height increment per level
+            let connectorHeight = baseHeight + (level * stepHeight);
+            let horizontalPosition = baseX;
+
+            // Apply saved custom position if exists
+            const dragId = `${year}-${eventIndex}`;
+            if (milestonePositions[dragId]) {
+                // Support both old format (number) and new format (object)
+                if (typeof milestonePositions[dragId] === 'number') {
+                    connectorHeight = milestonePositions[dragId];
                 } else {
-                    trackIndex++;
+                    connectorHeight = milestonePositions[dragId].height || connectorHeight;
+                    horizontalPosition = milestonePositions[dragId].left || horizontalPosition;
                 }
             }
 
-            // Calculate height: Base high level - (track * step)
-            // This means if they overlap, the next one appears slightly LOWER than the main high line
-            connectorHeight = importantBaseHeight - (trackIndex * importantStep);
+            const eventEl = document.createElement('div');
+            eventEl.className = `timeline-event ${position} ${milestone.important ? 'important' : ''}`;
+            eventEl.setAttribute('data-category', milestone.category);
+            eventEl.style.left = `${horizontalPosition}px`;
 
-        } else {
-            // Normal milestones: Standard bottom-up tracks
-            let trackIndex = 0;
-            let placed = false;
+            // Z-index: lower levels should be in front? or back?
+            // Higher connectors (level 2) should be behind level 0 cards to avoid drawing over them
+            // So higher level = lower z-index
+            eventEl.style.zIndex = 50 - level;
 
-            while (!placed) {
-                if (normalTrackEnds[trackIndex] === undefined) {
-                    normalTrackEnds[trackIndex] = -Infinity;
-                }
+            // Store drag ID on element
+            eventEl.dataset.dragId = dragId;
 
-                if (pm.leftEdge > normalTrackEnds[trackIndex] + cardGap) {
-                    normalTrackEnds[trackIndex] = pm.right;
-                    placed = true;
-                } else {
-                    trackIndex++;
-                }
-            }
-
-            // Calculate height based on track
-            connectorHeight = baseConnectorHeight + (trackIndex * trackHeightStep);
-        }
-
-        renderMilestoneElement(pm, connectorHeight, false);
-    });
-
-    function renderMilestoneElement(pm, height, hidden) {
-        const milestone = pm.data;
-        const index = pm.index;
-
-        const milestoneId = `${milestone.year}-${milestone.title.replace(/\s+/g, '-').toLowerCase()}`;
-        const customOffset = milestonePositions[milestoneId] || 0;
-        const finalHeight = Math.max(20, height + customOffset); // Minimum height 20px
-
-        const milestoneEl = document.createElement('div');
-        milestoneEl.className = `milestone ${milestone.important ? 'important' : ''}`;
-        if (hidden) milestoneEl.classList.add('hidden');
-
-        milestoneEl.setAttribute('data-category', milestone.category);
-        milestoneEl.setAttribute('data-id', milestoneId);
-        milestoneEl.setAttribute('data-base-zindex', milestone.important ? 100 : 10 + Math.floor(finalHeight / 10));
-        milestoneEl.style.cssText = `
-            left: ${pm.left}px;
-        `;
-
-        milestoneEl.innerHTML = `
-            <div class="milestone-connector" style="height: ${finalHeight}px;"></div>
-            <div class="milestone-card">
-                <div class="milestone-row">
-                    <span class="milestone-icon">${milestone.icon}</span>
-                    <span class="milestone-title">${milestone.title}</span>
-                    <span class="milestone-star ${milestone.important ? 'active' : ''}" data-index="${index}">⭐</span>
+            eventEl.innerHTML = `
+                <div class="event-connector" style="height: ${connectorHeight}px;"></div>
+                <div class="event-card">
+                    <div class="event-row">
+                        <span class="event-icon">${milestone.icon}</span>
+                        <span class="event-title">${milestone.title}</span>
+                        <span class="event-star ${milestone.important ? 'active' : ''}" data-index="${milestones.indexOf(milestone)}">⭐</span>
+                    </div>
+                    <div class="event-year">${milestone.year}</div>
                 </div>
-            </div>
-        `;
+            `;
 
-        // Add hover tooltip
-        milestoneEl.addEventListener('mouseenter', (e) => showTooltip(e, milestone));
-        milestoneEl.addEventListener('mouseleave', hideTooltip);
+            // Add hover tooltip
+            eventEl.addEventListener('mouseenter', (e) => showTooltip(e, milestone));
+            eventEl.addEventListener('mouseleave', hideTooltip);
 
-        // Add star click handler
-        const star = milestoneEl.querySelector('.milestone-star');
-        star.addEventListener('click', (e) => {
-            e.stopPropagation();
-            toggleImportant(index);
+            // Add star click handler
+            const star = eventEl.querySelector('.event-star');
+            star.addEventListener('click', (e) => {
+                e.stopPropagation();
+                toggleImportant(milestones.indexOf(milestone));
+            });
+
+            // Add drag start listener
+            const card = eventEl.querySelector('.event-card');
+            card.addEventListener('mousedown', (e) => dragStart(e, eventEl, milestones.indexOf(milestone), connectorHeight, year, eventIndex));
+
+            eventsContainer.appendChild(eventEl);
         });
-
-        // Drag & Drop functionality
-        const card = milestoneEl.querySelector('.milestone-card');
-        const row = milestoneEl.querySelector('.milestone-row');
-        const title = milestoneEl.querySelector('.milestone-title');
-
-        // Add listeners to multiple elements to ensure capture
-        const dragHandler = (e) => dragStart(e, milestoneEl, milestoneId, height);
-        card.addEventListener('mousedown', dragHandler);
-        if (row) row.addEventListener('mousedown', dragHandler);
-        if (title) title.addEventListener('mousedown', dragHandler);
-
-        milestonesContainer.appendChild(milestoneEl);
-    }
-}
-
-// ============================================
-// DRAG & DROP LOGIC
-// ============================================
-
-let isDragging = false;
-let currentDragItem = null;
-let dragStartY = 0;
-let initialHeight = 0;
-let currentMilestoneId = null;
-let baseHeight = 0;
-
-function dragStart(e, element, id, originalBaseHeight) {
-    if (e.target.classList.contains('milestone-star')) return; // Don't drag when clicking star
-    if (!isEditMode) return; // Only allow dragging in edit mode
-
-    isDragging = true;
-    currentDragItem = element;
-    currentMilestoneId = id;
-    baseHeight = originalBaseHeight;
-    dragStartY = e.clientY;
-
-    // Get current height
-    const connector = element.querySelector('.milestone-connector');
-    initialHeight = parseInt(connector.style.height || baseHeight);
-
-    // Hide tooltip during drag
-    hideTooltip();
-
-    element.querySelector('.milestone-card').classList.add('dragging');
-    document.body.style.cursor = 'grabbing';
-
-    // Bring to front while dragging
-    element.style.zIndex = 9999;
-
-    document.addEventListener('mousemove', drag);
-    document.addEventListener('mouseup', dragEnd);
-}
-
-function drag(e) {
-    if (!isDragging) return;
-    e.preventDefault();
-
-    const deltaY = dragStartY - e.clientY; // Moving up increases height
-    const newHeight = Math.max(20, initialHeight + deltaY); // Min height 20px
-
-    const connector = currentDragItem.querySelector('.milestone-connector');
-    connector.style.height = `${newHeight}px`;
-
-    // Do not update z-index here, it's handled by dragStart (9999) and dragEnd (restore)
-    // currentDragItem.style.zIndex = 10 + Math.floor(newHeight / 10);
-}
-
-function dragEnd(e) {
-    if (!isDragging) return;
-
-    isDragging = false;
-    document.body.style.cursor = 'default';
-    currentDragItem.querySelector('.milestone-card').classList.remove('dragging');
-
-    const connector = currentDragItem.querySelector('.milestone-connector');
-    const finalHeight = parseInt(connector.style.height);
-
-    // Calculate offset from base height
-    const offset = finalHeight - baseHeight;
-
-    if (offset !== 0) {
-        milestonePositions[currentMilestoneId] = offset;
-    } else {
-        delete milestonePositions[currentMilestoneId];
-    }
-
-    // Restore original z-index based on new height
-    const baseZIndex = currentDragItem.getAttribute('data-base-zindex') || 10;
-    currentDragItem.style.zIndex = Math.max(parseInt(baseZIndex), 10 + Math.floor(finalHeight / 10));
-
-    saveToLocalStorage();
-
-    document.removeEventListener('mousemove', drag);
-    document.removeEventListener('mouseup', dragEnd);
-    currentDragItem = null;
-}
-
-function randomBetween(min, max) {
-    return Math.floor(Math.random() * (max - min + 1)) + min;
+    });
 }
 
 // ============================================
@@ -484,9 +357,7 @@ function randomBetween(min, max) {
 // ============================================
 
 function showTooltip(event, milestone) {
-    // Don't show tooltip while dragging or in edit mode
-    if (isDragging || isEditMode) return;
-
+    if (isEditMode) return;
     const tooltip = document.getElementById('tooltip');
     const tooltipContent = tooltip.querySelector('.tooltip-content');
 
@@ -599,32 +470,6 @@ async function resetToInitialData() {
     }
 }
 
-function resetPositions() {
-    if (confirm('¿Estás seguro de resetear todas las posiciones personalizadas?')) {
-        milestonePositions = {};
-        saveToLocalStorage();
-        renderTimeline();
-        alert('✅ Posiciones reseteadas');
-    }
-}
-
-function toggleEditMode() {
-    isEditMode = !isEditMode;
-    const btn = document.getElementById('toggleEditModeBtn');
-
-    if (isEditMode) {
-        btn.classList.add('active');
-        btn.innerHTML = '<span class="icon">✏️</span> Salir de Modo Edición';
-        document.body.classList.add('edit-mode');
-        // Hide any visible tooltip
-        hideTooltip();
-    } else {
-        btn.classList.remove('active');
-        btn.innerHTML = '<span class="icon">✏️</span> Modo Edición';
-        document.body.classList.remove('edit-mode');
-    }
-}
-
 function clearAllData() {
     if (confirm('⚠️ ¿Estás seguro de eliminar TODOS los hitos? Esta acción no se puede deshacer.')) {
         milestones = [];
@@ -639,9 +484,15 @@ function updateStats() {
     const important = milestones.filter(m => m.important).length;
     const yearRange = getYearRange();
 
+    // Update in nav menu
     document.getElementById('totalMilestones').textContent = total;
     document.getElementById('importantMilestones').textContent = important;
     document.getElementById('yearRange').textContent = `${yearRange.min}-${yearRange.max}`;
+
+    // Update in editor panel
+    document.getElementById('statTotal').textContent = total;
+    document.getElementById('statImportant').textContent = important;
+    document.getElementById('statYears').textContent = `${yearRange.min}-${yearRange.max}`;
 }
 
 // ============================================
@@ -669,14 +520,16 @@ function exportToJPG() {
     // Use html2canvas to capture the element
     html2canvas(element, {
         scale: 2, // Higher quality
-        backgroundColor: '#111111', // Ensure dark background
+        backgroundColor: '#0a0a0a', // Dark background
         logging: false,
-        useCORS: true
+        useCORS: true,
+        width: element.scrollWidth,
+        height: element.scrollHeight
     }).then(canvas => {
         // Create download link
         const link = document.createElement('a');
-        link.download = 'linea-tiempo-dagtech.jpg';
-        link.href = canvas.toDataURL('image/jpeg', 0.9);
+        link.download = 'linea-tiempo-dagtech-alternada.jpg';
+        link.href = canvas.toDataURL('image/jpeg', 0.95);
         link.click();
 
         btn.innerHTML = originalText;
@@ -691,11 +544,148 @@ function exportToJPG() {
 }
 
 // ============================================
+// DRAG & DROP LOGIC
+// ============================================
+
+let isEditMode = false;
+let isDragging = false;
+let currentDragItem = null;
+let dragStartY = 0;
+let dragStartX = 0;
+let initialHeight = 0;
+let initialLeft = 0;
+let currentMilestoneIndex = -1;
+let milestonePositions = {}; // Store custom heights and positions by milestone ID (year-index)
+
+function loadPositionsFromLocalStorage() {
+    const stored = localStorage.getItem('dagtech_milestone_positions_alt');
+    if (stored) {
+        try {
+            milestonePositions = JSON.parse(stored);
+        } catch (e) {
+            console.error('Error loading positions:', e);
+        }
+    }
+}
+
+function savePositionsToLocalStorage() {
+    localStorage.setItem('dagtech_milestone_positions_alt', JSON.stringify(milestonePositions));
+}
+
+function toggleEditMode() {
+    isEditMode = !isEditMode;
+    const btn = document.getElementById('toggleEditModeBtn');
+
+    if (isEditMode) {
+        btn.classList.add('active');
+        btn.innerHTML = '<span class="icon">✏️</span> Salir de Edición';
+        document.body.classList.add('edit-mode');
+        hideTooltip();
+    } else {
+        btn.classList.remove('active');
+        btn.innerHTML = '<span class="icon">✏️</span> Modo Edición';
+        document.body.classList.remove('edit-mode');
+    }
+}
+
+function dragStart(e, element, index, originalHeight, year, eventIndexInYear) {
+    if (!isEditMode) return;
+    if (e.target.classList.contains('event-star')) return;
+
+    isDragging = true;
+    currentDragItem = element;
+    dragStartY = e.clientY;
+    dragStartX = e.clientX;
+
+    // Get current height from style or use original
+    const connector = element.querySelector('.event-connector');
+    initialHeight = parseInt(connector.style.height);
+
+    // Get current left position
+    initialLeft = parseInt(element.style.left) || 0;
+
+    // Store ID for saving
+    currentDragItem.dataset.dragId = `${year}-${eventIndexInYear}`;
+
+    element.querySelector('.event-card').classList.add('dragging');
+    document.body.style.cursor = 'grabbing';
+
+    document.addEventListener('mousemove', drag);
+    document.addEventListener('mouseup', dragEnd);
+
+    e.preventDefault(); // Prevent text selection
+}
+
+function drag(e) {
+    if (!isDragging) return;
+    e.preventDefault();
+
+    const deltaY = dragStartY - e.clientY;
+    const deltaX = e.clientX - dragStartX;
+    const isAbove = currentDragItem.classList.contains('above');
+
+    // Vertical movement (height adjustment)
+    let heightChange = 0;
+    if (isAbove) {
+        heightChange = deltaY; // Drag up = positive deltaY = increase height
+    } else {
+        heightChange = -deltaY; // Drag down = negative deltaY = increase height
+    }
+
+    const newHeight = Math.max(20, initialHeight + heightChange); // Min height 20px
+
+    const connector = currentDragItem.querySelector('.event-connector');
+    connector.style.height = `${newHeight}px`;
+
+    // Horizontal movement
+    const newLeft = initialLeft + deltaX;
+    currentDragItem.style.left = `${newLeft}px`;
+}
+
+function dragEnd(e) {
+    if (!isDragging) return;
+
+    isDragging = false;
+    document.body.style.cursor = 'default';
+    currentDragItem.querySelector('.event-card').classList.remove('dragging');
+
+    const connector = currentDragItem.querySelector('.event-connector');
+    const finalHeight = parseInt(connector.style.height);
+    const finalLeft = parseInt(currentDragItem.style.left);
+    const dragId = currentDragItem.dataset.dragId;
+
+    // Save both height and horizontal position
+    milestonePositions[dragId] = {
+        height: finalHeight,
+        left: finalLeft
+    };
+    savePositionsToLocalStorage();
+
+    document.removeEventListener('mousemove', drag);
+    document.removeEventListener('mouseup', dragEnd);
+    currentDragItem = null;
+}
+
+// Double click on background to toggle edit mode
+document.addEventListener('dblclick', (e) => {
+    // Ignore if clicking on a card or interactive element
+    if (e.target.closest('.event-card') ||
+        e.target.closest('.nav-menu') ||
+        e.target.closest('.editor-panel') ||
+        e.target.closest('button')) {
+        return;
+    }
+    toggleEditMode();
+});
+
+// ============================================
 // EVENT LISTENERS
 // ============================================
 
 document.addEventListener('DOMContentLoaded', async () => {
-    // Load data
+    loadPositionsFromLocalStorage();
+
+    // ... (rest of existing code) ...
     let loadedFromFetch = false;
     try {
         const response = await fetch('data.md');
@@ -704,7 +694,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             if (text) {
                 INITIAL_DATA = text;
                 milestones = parseMarkdown(INITIAL_DATA);
-                saveToLocalStorage(); // Update local storage with fresh data
+                saveToLocalStorage();
                 loadedFromFetch = true;
                 console.log('Datos cargados exitosamente desde data.md');
             }
@@ -723,14 +713,37 @@ document.addEventListener('DOMContentLoaded', async () => {
                 saveToLocalStorage();
             }
         } else {
-            console.log('Datos cargados desde localStorage (offline o error de fetch)');
+            console.log('Datos cargados desde localStorage');
         }
     }
 
     // Initial render
     renderTimeline();
 
-    // Header buttons
+    // Re-render on window resize to adjust positions
+    window.addEventListener('resize', () => {
+        renderTimeline();
+    });
+
+    // Menu functionality
+    const navMenu = document.getElementById('navMenu');
+    const menuBtn = document.getElementById('menuBtn');
+    const closeMenuBtn = document.getElementById('closeMenuBtn');
+
+    function toggleMenu() {
+        navMenu.classList.toggle('open');
+    }
+
+    menuBtn.addEventListener('click', toggleMenu);
+    closeMenuBtn.addEventListener('click', toggleMenu);
+
+    navMenu.addEventListener('click', (e) => {
+        if (e.target === navMenu) {
+            toggleMenu();
+        }
+    });
+
+    // Editor panel
     document.getElementById('openEditorBtn').addEventListener('click', openEditor);
     document.getElementById('closeEditorBtn').addEventListener('click', closeEditor);
     document.getElementById('overlay').addEventListener('click', closeEditor);
@@ -752,44 +765,16 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
     });
 
-    // Menu functionality
-    const navMenu = document.getElementById('navMenu');
-    const menuBtn = document.getElementById('menuBtn');
-    const closeMenuBtn = document.getElementById('closeMenuBtn');
-
-    function toggleMenu() {
-        navMenu.classList.toggle('open');
-    }
-
-    menuBtn.addEventListener('click', toggleMenu);
-    closeMenuBtn.addEventListener('click', toggleMenu);
-
-    // Close menu when clicking outside content
-    navMenu.addEventListener('click', (e) => {
-        if (e.target === navMenu) {
-            toggleMenu();
-        }
-    });
-
     // Editor actions
     document.getElementById('importMarkdownBtn').addEventListener('click', importFromMarkdown);
     document.getElementById('exportMarkdownBtn').addEventListener('click', exportMarkdownToTextarea);
     document.getElementById('resetDataBtn').addEventListener('click', resetToInitialData);
-    document.getElementById('resetPositionsBtn').addEventListener('click', resetPositions);
     document.getElementById('clearDataBtn').addEventListener('click', clearAllData);
     document.getElementById('exportJpgBtn').addEventListener('click', exportToJPG);
     document.getElementById('toggleEditModeBtn').addEventListener('click', toggleEditMode);
 
-    // Double click on timeline wrapper to toggle edit mode
-    document.getElementById('timelineWrapper').addEventListener('dblclick', (e) => {
-        // Only toggle if clicking on the wrapper itself, not on cards
-        if (e.target.id === 'timelineWrapper' || e.target.id === 'timelineMilestones' || e.target.id === 'timelineYears') {
-            toggleEditMode();
-        }
-    });
-
     // Version switcher
     document.getElementById('switchVersionBtn').addEventListener('click', () => {
-        window.location.href = 'index-alternating.html';
+        window.location.href = 'index.html';
     });
 });
